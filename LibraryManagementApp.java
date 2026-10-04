@@ -627,8 +627,13 @@ public class LibraryManagementApp {
     }
     
     private static void printDataBox(String title, String[] data) {
-        int width = 70;
-        
+        // Grow the box to fit the longest row (a fixed width of 70 made
+        // " ".repeat(...) get a negative count and crash on long book rows)
+        int width = Math.max(70, title.length() + 2);
+        for (String item : data) {
+            width = Math.max(width, item.length() + 4);
+        }
+
         System.out.println("╔" + "═".repeat(width - 2) + "╗");
         
         // Title

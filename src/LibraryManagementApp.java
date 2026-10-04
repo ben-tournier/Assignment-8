@@ -181,13 +181,14 @@ public class LibraryManagementApp {
             "1. Issue Book to Member",
             "2. Return Book from Member",
             "3. View Member's Issued Books",
-            "4. Back to Main Menu"
+            "4. View Overdue Books & Fines",
+            "5. Back to Main Menu"
         };
         printMenuTable("ISSUE/RETURN BOOKS", menuOptions);
         System.out.println("==========================");
-        
+
         int choice = getIntInput("Enter your choice: ");
-        
+
         switch (choice) {
             case 1:
                 issueBook();
@@ -199,6 +200,9 @@ public class LibraryManagementApp {
                 viewMemberBooks();
                 break;
             case 4:
+                displayOverdueBooks();
+                break;
+            case 5:
                 return;
             default:
                 System.out.println("Invalid choice!");
@@ -360,7 +364,8 @@ public class LibraryManagementApp {
             {"Total Members", String.valueOf(library.getAllMembers().size())},
             {"Total Librarians", String.valueOf(library.getAllLibrarians().size())},
             {"Books Issued", String.valueOf(issuedCount)},
-            {"Books Available", String.valueOf(availableCount)}
+            {"Books Available", String.valueOf(availableCount)},
+            {"Books Overdue", String.valueOf(library.getOverdueBooks().size())}
         };
         
         printDataTable("LIBRARY STATISTICS", headers, data);
@@ -421,7 +426,38 @@ public class LibraryManagementApp {
                 System.out.println(book);
             }
         }
+        System.out.println("Outstanding Fines: $" + String.format("%.2f", library.getTotalFinesForMember(memberId)));
         System.out.println("═══════════════════════════════════════");
+    }
+
+    private static void displayOverdueBooks() {
+        List<Book> overdueBooks = library.getOverdueBooks();
+        if (overdueBooks.isEmpty()) {
+            System.out.println("No overdue books. 🎉");
+            return;
+        }
+
+        LocalDate today = LocalDate.now();
+        String[] headers = {"ID", "Title", "Issued To", "Due Date", "Days Late", "Fine"};
+        String[][] data = new String[overdueBooks.size()][6];
+        double totalFines = 0;
+
+        for (int i = 0; i < overdueBooks.size(); i++) {
+            Book book = overdueBooks.get(i);
+            double fine = FineCalculator.calculateFine(book, today);
+            totalFines += fine;
+            data[i][0] = book.getBookId();
+            data[i][1] = book.getTitle();
+            data[i][2] = book.getIssuedTo();
+            data[i][3] = book.getReturnDate();
+            data[i][4] = String.valueOf(FineCalculator.getDaysOverdue(book, today));
+            data[i][5] = String.format("$%.2f", fine);
+        }
+
+        printDataTable("OVERDUE BOOKS (Total: " + overdueBooks.size() + ")", headers, data);
+        System.out.println("Total outstanding fines: $" + String.format("%.2f", totalFines)
+                + " ($" + String.format("%.2f", FineCalculator.FINE_PER_DAY) + "/day, max $"
+                + String.format("%.2f", FineCalculator.MAX_FINE_PER_BOOK) + " per book)");
     }
     
     // Detail View Methods

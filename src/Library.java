@@ -89,6 +89,14 @@ public class Library {
                 .filter(Book::isIssued)
                 .collect(Collectors.toList());
     }
+
+    public List<Book> getOverdueBooks() {
+        return FineCalculator.getOverdueBooks(books, LocalDate.now());
+    }
+
+    public double getTotalFinesForMember(String memberId) {
+        return FineCalculator.getTotalFinesForMember(books, memberId, LocalDate.now());
+    }
     
     // Member Management Methods
     public boolean addMember(Member member) {
@@ -204,15 +212,22 @@ public class Library {
             return false;
         }
         
+        // Check for late fees before the return clears the due date
+        long daysOverdue = FineCalculator.getDaysOverdue(book, LocalDate.now());
+        double fine = FineCalculator.calculateFine(book, LocalDate.now());
+
         // Return the book
         if (book.returnBook()) {
             member.removeIssuedBook(bookId);
             saveAllData();
-            
+
             System.out.println("✅ Book returned successfully!");
             System.out.println("📖 Book: " + book.getTitle());
             System.out.println("👤 Member: " + member.getName());
             System.out.println("📅 Return Date: " + LocalDate.now().format(DATE_FORMAT));
+            if (fine > 0) {
+                System.out.println("⚠️ Returned " + daysOverdue + " day(s) late. Fine due: $" + String.format("%.2f", fine));
+            }
             return true;
         }
         
